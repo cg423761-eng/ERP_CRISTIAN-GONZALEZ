@@ -1,0 +1,1722 @@
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema ERP Contable - Partida Doble</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn:hover {
+            background: #e8e8e8;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            background: white;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        button.secondary {
+            background: #6c757d;
+            margin-left: 10px;
+        }
+
+        button.secondary:hover {
+            background: #5a6268;
+        }
+
+        button.danger {
+            background: #dc3545;
+        }
+
+        button.danger:hover {
+            background: #c82333;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-debit {
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .badge-credit {
+            background: #f8d7da;
+            color: #842029;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .report-container {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .report-section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+
+        .company-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #333;
+        }
+
+        .company-info h2 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .company-info p {
+            color: #666;
+            margin: 2px 0;
+        }
+
+        .date-range {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .action-btn {
+            background: #28a745;
+            margin-right: 5px;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .action-btn.edit {
+            background: #007bff;
+        }
+
+        .action-btn.delete {
+            background: #dc3545;
+        }
+
+        .action-btn.delete:hover {
+            background: #c82333;
+        }
+
+        .summary-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .summary-card h3 {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .summary-card .value {
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-close {
+            background: #6c757d;
+            float: right;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .asiento-detalle {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .asiento-detalle-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+
+        .print-btn {
+            background: #6f42c1;
+        }
+
+        .print-btn:hover {
+            background: #5a32a3;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .tabs, .button-group, .action-btn {
+                display: none;
+            }
+            .report-container {
+                background: white;
+                box-shadow: none;
+                padding: 0;
+            }
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .debit {
+            color: #084298;
+        }
+
+        .credit {
+            color: #842029;
+        }
+
+        .balance-positive {
+            color: #28a745;
+        }
+
+        .balance-negative {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sistema ERP Contable de MAXITECH</h1>
+            <h2>Gestión de Contabilidad por Partida Doble</h2>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="abrirPestana('vision')">Visión </button>
+            <button class="tab-btn" onclick="abrirPestana('mision')">Misión</button>
+            <button class="tab-btn" onclick="abrirPestana('cuentas')">Cuentas</button>
+            <button class="tab-btn" onclick="abrirPestana('asientos')">Partidas</button>
+            <button class="tab-btn" onclick="abrirPestana('libro-diario')">Libro Diario</button>
+            <button class="tab-btn" onclick="abrirPestana('libro-mayor')">Libro Mayor</button>
+            <button class="tab-btn" onclick="abrirPestana('balance')">Balance General</button>
+            <button class="tab-btn" onclick="abrirPestana('resultados')">Estado de Resultados</button>
+        </div>
+        <div class="vision">
+            <div id ="vision" class="tab-content active " >
+                <div class="section">
+                    <h2 class="section-title">Visión de MAXITECH</h2>
+                    <h3>Ser la empresa líder y referente en Guatemala en la importación, distribución y comercialización deequipos de cómputo, componentes tecnológicos y servicios especializados de soporte técnico,destacándonos por la excelencia de nuestros productos, la innovación constante y la calidad de nuestroservicio.</h3> <br/>
+                    <h3>Aspiramos a convertirnos en la primera opción para personas, empresas e instituciones que buscansoluciones tecnológicas confiables y modernas, expandiendo nuestra presencia a nivel nacional y fortaleciendo nuestra red de atención y soporte. Buscamos impulsar la transformación digital denuestros clientes mediante el acceso a tecnología de vanguardia que les permita mejorar suproductividad, comunicación y desarrollo.</h3> <br/>
+                    <h3>En el futuro, Maxitech pretende consolidarse como una organización reconocida por su compromiso conla satisfacción del cliente, la capacitación continua de su personal, la responsabilidad empresarial y laimplementación de nuevas tecnologías que contribuyan al crecimiento económico y tecnológico deGuatemala, generando valor sostenible para nuestros clientes, colaboradores y la sociedad en general.</h3>
+                </div>
+            </div>
+        </div>
+        <div class="mision">
+            <div id ="mision" class="tab-content " >
+                <div class="section">
+                    <h2 class="section-title">Misión de MAXITECH</h2>
+                    <h3>En Maxitech, nuestra misión es proporcionar soluciones tecnológicas integrales que contribuyan al desarrollo y crecimiento de nuestros clientes, ofreciendo equipos de cómputo, componentes y accesorios de alta calidad respaldados por un servicio técnico profesional y confiable. Nos comprometemos a satisfacer las necesidades tecnológicas de hogares, estudiantes, profesionales y empresas mediante la importación y comercialización de productos innovadores, garantizando precios competitivos, asesoría especializada y una atención al cliente excepcional.</h3> <br/>
+                    <h3>Buscamos facilitar el acceso a la tecnología a través de un proceso de compra eficiente, entregas seguras en todo el territorio nacional y un servicio postventa que genere confianza y satisfacción. Trabajamos continuamente para mejorar nuestros procesos, fortalecer nuestras relaciones con clientes y proveedores, e impulsar el uso de herramientas tecnológicas que permitan a nuestros usuarios alcanzar sus objetivos personales y profesionales.</h3> <br/>
+                </div>
+            </div>
+
+        <div class="content">
+            <!-- PESTAÑA: CUENTAS -->
+            <div id="cuentas" class="tab-content " >
+                <div class="section">
+                    <h2 class="section-title">Gestión de Cuentas</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Código de Cuenta</label>
+                            <input type="text" id="codigoCuenta" placeholder="Ej: 1010">
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre de Cuenta</label>
+                            <input type="text" id="nombreCuenta" placeholder="Ej: Caja">
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Cuenta</label>
+                            <select id="tipoCuenta">
+                                <option value="">Seleccionar...</option>
+                                <option value="ACTIVO">Activo</option>
+                                <option value="PASIVO">Pasivo</option>
+                                <option value="CAPITAL">Capital</option>
+                                <option value="INGRESO">Ingreso</option>
+                                <option value="GASTO">Gasto</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="agregarCuenta()">Agregar Cuenta</button>
+                </div>
+
+                <div class="section">
+                    <h2 class="section-title">Listado de Cuentas</h2>
+                    <table id="tablaCuentas">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Saldo Deudor/Acreedor</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTabla"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PESTAÑA: ASIENTOS -->
+            <div id="asientos" class="tab-content">
+                <div class="section">
+                    <h2 class="section-title">Registrar Partida Contable</h2>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Número de Partida</label>
+                            <input type="text" id="numAsiento" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha</label>
+                            <input type="date" id="fechaAsiento" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Descripción</label>
+                            <input type="text" id="descAsiento" placeholder="Ej: Compra de mercadería">
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3 style="margin-top: 20px; margin-bottom: 15px;">Detalles de la Partida</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Cuenta</label>
+                                <select id="cuentaAsiento">
+                                    <option value="">Seleccionar cuenta...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo Movimiento</label>
+                                <select id="tipoMovimiento">
+                                    <option value="DEBE">Debe</option>
+                                    <option value="HABER">Haber</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Monto</label>
+                                <input type="number" id="montoAsiento" placeholder="0.00" step="0.01" min="0">
+                            </div>
+                        </div>
+                        <button onclick="agregarDetalleAsiento()">Agregar Detalle</button>
+                    </div>
+
+                    <div id="detallesAsiento" style="margin-top: 20px;"></div>
+
+                    <div class="form-row" style="margin-top: 20px;">
+                        <div style="text-align: right; font-weight: bold; font-size: 1.1em;">
+                            Total Debe: <span id="totalDebe" class="debit">0.00</span><br>
+                            Total Haber: <span id="totalHaber" class="credit">0.00</span><br>
+                            <span id="balanceMsg"></span>
+                        </div>
+                    </div>
+
+                    <button onclick="grabarAsiento()" style="margin-top: 20px; width: 100%;">Grabar Partida</button>
+                </div>
+
+                <div class="section">
+                    <h2 class="section-title">Partidas Registradas</h2>
+                    <table id="tablaAsientos">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Fecha</th>
+                                <th>Descripción</th>
+                                <th>Debe</th>
+                                <th>Haber</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoAsientos"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PESTAÑA: LIBRO DIARIO -->
+            <div id="libro-diario" class="tab-content">
+                <div class="report-container" id="reportLibroDiario"></div>
+                <div class="button-group" style="margin-top: 20px;">
+                    <button onclick="generarLibroDiario()">Generar Libro Diario</button>
+                    <button class="print-btn" onclick="exportarPDF('libroDiario')">Descargar PDF</button>
+                </div>
+            </div>
+
+            <!-- PESTAÑA: LIBRO MAYOR -->
+            <div id="libro-mayor" class="tab-content">
+                <div class="section">
+                    <label>Seleccionar Cuenta:</label>
+                    <select id="cuentaMayor" onchange="generarLibroMayor()">
+                        <option value="">Todas las cuentas</option>
+                    </select>
+                </div>
+                <div class="report-container" id="reportLibroMayor"></div>
+                <div class="button-group" style="margin-top: 20px;">
+                    <button class="print-btn" onclick="exportarPDF('libroMayor')">Descargar PDF</button>
+                </div>
+            </div>
+
+            <!-- PESTAÑA: BALANCE GENERAL -->
+            <div id="balance" class="tab-content">
+                <div class="report-container" id="reportBalance"></div>
+                <div class="button-group" style="margin-top: 20px;">
+                    <button onclick="generarBalance()">Generar Balance General</button>
+                    <button class="print-btn" onclick="exportarPDF('balance')">Descargar PDF</button>
+                </div>
+            </div>
+
+            <!-- PESTAÑA: ESTADO DE RESULTADOS -->
+            <div id="resultados" class="tab-content">
+                <div class="report-container" id="reportResultados"></div>
+                <div class="button-group" style="margin-top: 20px;">
+                    <button onclick="generarResultados()">Generar Estado de Resultados</button>
+                    <button class="print-btn" onclick="exportarPDF('resultados')">Descargar PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EDICIÓN -->
+    <div id="modalEditar" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="cerrarModal()">Cerrar</button>
+            <div class="modal-header">Editar Asiento</div>
+            <div id="contenidoModal"></div>
+        </div>
+    </div>
+
+    <script>
+        // VARIABLES GLOBALES
+        let cuentas = JSON.parse(localStorage.getItem('cuentas')) || [];
+        let asientos = JSON.parse(localStorage.getItem('asientos')) || [];
+        let detallesActuales = [];
+
+        // INICIALIZACIÓN
+        function inicializar() {
+            document.getElementById('fechaAsiento').valueAsDate = new Date();
+            cargarCuentasDefault();
+            cargarAsientosDefault();
+            actualizarNumAsiento();
+            actualizarTabla();
+            actualizarSelectCuentas();
+            actualizarTablaAsientos();
+        }
+
+        function cargarCuentasDefault() {
+            if (cuentas.length === 0) {
+                const cuentasDefault = [
+                    { codigo: '1010', nombre: 'Caja', tipo: 'ACTIVO' },
+                    { codigo: '1020', nombre: 'Bancos', tipo: 'ACTIVO' },
+                    { codigo: '1030', nombre: 'Clientes', tipo: 'ACTIVO' },
+                    { codigo: '1040', nombre: 'Mercaderías', tipo: 'ACTIVO' },
+                    { codigo: '2010', nombre: 'Proveedores', tipo: 'PASIVO' },
+                    { codigo: '1050', nombre: 'Inventario de Mercaderías', tipo: 'ACTIVO' },
+                    { codigo: '1060', nombre: 'Equipo de Computación', tipo: 'ACTIVO' },
+                    { codigo: '2020', nombre: 'Cuentas por Pagar', tipo: 'PASIVO' },
+                    { codigo: '3010', nombre: 'Capital', tipo: 'CAPITAL' },
+                    { codigo: '4010', nombre: 'Ventas', tipo: 'INGRESO' },
+                    { codigo: '5010', nombre: 'Costo de Ventas', tipo: 'GASTO' },
+                    { codigo: '5020', nombre: 'Gastos Operacionales', tipo: 'GASTO' },
+                    { codigo: '5030', nombre: 'Gastos de Sueldos', tipo: 'GASTO' },
+                    { codigo: '5040', nombre: 'Gastos de Alquiler', tipo: 'GASTO' },
+                    { codigo: '5050', nombre: 'Gastos de Servicios', tipo: 'GASTO' },
+                    { codigo: '5060', nombre: 'Gastos de Publicidad', tipo: 'GASTO' }
+
+                ];
+                cuentas = cuentasDefault;
+                guardarDatos();
+             }
+         }
+
+        function cargarAsientosDefault() {
+            if (asientos.length === 0) {
+                 const caja = cuentas.find(c => c.codigo === '1010');
+                 const capital = cuentas.find(c => c.codigo === '3010');
+                const inventario = cuentas.find(c => c.codigo === '1040');
+                const equipo = cuentas.find(c => c.codigo === '1060');
+                const ventas = cuentas.find(c => c.codigo === '4010');
+                const salarios = cuentas.find(c => c.codigo === '5030');
+                const alquiler = cuentas.find(c => c.codigo === '5040');
+                const proveedores = cuentas.find(c => c.codigo === '2010');
+                const servicios = cuentas.find(c => c.codigo === '5050');
+                const publicidad = cuentas.find(c => c.codigo === '5060');
+
+                if (caja && capital && inventario && equipo && ventas && salarios && alquiler && proveedores && servicios && publicidad) {
+                    const asientosDefault = [
+                        {
+
+
+                        numero: 1,
+                        fecha: '2026-02-01',
+                        descripcion: 'Aporte inicial de capital',
+                        detalles: [
+                            { codigo: '1010', nombre: caja.nombre, tipo: 'DEBE', monto: 150000 },
+                            { codigo: '3010', nombre: capital.nombre, tipo: 'HABER', monto: 150000 }
+                        ],
+                        totalDebe: 150000,
+                        totalHaber: 150000
+                        },
+                        {
+                            numero: 2,
+                            fecha: '2026-02-05',
+                            descripcion: 'Compra de mercadería al contado',
+                            detalles: [
+                                { codigo: '1040', nombre: inventario.nombre, tipo: 'DEBE', monto: 80000 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 80000 }
+                            ],
+                            totalDebe: 80000,
+                            totalHaber: 80000
+                        },
+                        {
+                            numero: 3,
+                            fecha: '2026-02-10',
+                            descripcion: 'Compra de equipo de computación',
+                            detalles: [
+                                { codigo: '1060', nombre: equipo.nombre, tipo: 'DEBE', monto: 25000 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 25000 }
+                            ],
+                            totalDebe: 25000,
+                            totalHaber: 25000
+                        },
+                        {
+                            numero: 4,
+                            fecha: '2026-02-15',
+                            descripcion: 'Venta de equipos de cómputo',
+                            detalles: [
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'DEBE', monto: 40000 },
+                                { codigo: '4010', nombre: ventas.nombre, tipo: 'HABER', monto: 40000 }
+                            ],
+                            totalDebe: 40000,
+                            totalHaber: 40000
+                        },
+                        {
+                            numero: 5,
+                            fecha: '2026-02-20',
+                            descripcion: 'Pago de sueldos',
+                            detalles: [
+                                { codigo: '5030', nombre: salarios.nombre, tipo: 'DEBE', monto: 8000 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 8000 }
+                            ],
+                            totalDebe: 8000,
+                            totalHaber: 8000
+                        },
+                        {
+                            numero: 6,
+                            fecha: '2026-02-25',
+                            descripcion: 'Pago de alquiler',
+                            detalles: [
+                                { codigo: '5040', nombre: alquiler.nombre, tipo: 'DEBE', monto: 3000 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 3000 }
+                            ],
+                            totalDebe: 3000,
+                            totalHaber: 3000
+                        },
+                        {
+                            numero: 7,
+                            fecha: '2026-03-03',
+                            descripcion: 'Compra de inventario al crédito',
+                            detalles: [
+                                { codigo: '1040', nombre: inventario.nombre, tipo: 'DEBE', monto: 50000 },
+                                { codigo: '2010', nombre: proveedores.nombre, tipo: 'HABER', monto: 50000 }
+                            ],
+                            totalDebe: 50000,
+                            totalHaber: 50000
+                        },
+                        {
+                            numero: 8,
+                            fecha: '2026-03-10',
+                            descripcion: 'Venta de mercadería',
+                            detalles: [
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'DEBE', monto: 65000 },
+                                { codigo: '4010', nombre: ventas.nombre, tipo: 'HABER', monto: 65000 }
+                            ],
+                            totalDebe: 65000,
+                            totalHaber: 65000
+                        },
+                        {
+                            numero: 9,
+                            fecha: '2026-03-15',
+                            descripcion: 'Pago de salarios',
+                            detalles: [
+                                { codigo: '5030', nombre: salarios.nombre, tipo: 'DEBE', monto: 8000 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 8000 }
+                            ],
+                            totalDebe: 8000,
+                            totalHaber: 8000
+                        },
+                        {
+                            numero: 10,
+                            fecha: '2026-03-18',
+                            descripcion: 'Pago de energía e internet',
+                            detalles: [
+                                { codigo: '5050', nombre: servicios.nombre, tipo: 'DEBE', monto: 2000 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 2000 }
+                            ],
+                            totalDebe: 2000,
+                            totalHaber: 2000
+                        },
+                        {
+                            numero: 11,
+                            fecha: '2026-03-30',
+                            descripcion: 'Abono a proveedores',
+                            detalles: [
+                                { codigo: '2010', nombre: proveedores.nombre, tipo: 'DEBE', monto: 2000 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 2000 }
+                            ],
+                            totalDebe: 2000,
+                            totalHaber: 2000
+                        },
+                        {
+                            numero: 12,
+                            fecha: '2026-04-05',
+                            descripcion: 'Venta de equipos de cómputo al contado',
+                            detalles: [
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'DEBE', monto: 75000 },
+                                { codigo: '4010', nombre: ventas.nombre, tipo: 'HABER', monto: 75000 }
+                            ],
+                            totalDebe: 75000,
+                            totalHaber: 75000
+                        },
+                        {
+                            numero: 13,
+                            fecha: '2026-04-10',
+                            descripcion: 'Compra de mercadería al crédito',
+                            detalles: [
+                                { codigo: '1040', nombre: inventario.nombre, tipo: 'DEBE', monto: 35000 },
+                                { codigo: '2010', nombre: proveedores.nombre, tipo: 'HABER', monto: 35000 }
+                            ],
+                            totalDebe: 35000,
+                            totalHaber: 35000
+                        },
+                        {
+                            numero: 14,
+                            fecha: '2026-04-15',
+                            descripcion: 'Pago de salarios',
+                            detalles: [
+                                { codigo: '5030', nombre: salarios.nombre, tipo: 'DEBE', monto: 8000 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 8000 }
+                            ],
+                            totalDebe: 8000,
+                            totalHaber: 8000
+                        },
+                        {
+                            numero: 15,
+                            fecha: '2026-04-22',
+                            descripcion: 'Pago de publicitaria',
+                            detalles: [
+                                { codigo: '5060', nombre: publicidad.nombre, tipo: 'DEBE', monto: 4000 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 4000 }
+                            ],
+                            totalDebe: 4000,
+                            totalHaber: 4000
+                        },
+                        {
+                            numero: 16,
+                            fecha: '2026-04-28',
+                            descripcion: 'Pago parcial a proveedores',
+                            detalles: [
+                                { codigo: '2010', nombre: proveedores.nombre, tipo: 'DEBE', monto: 15000 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 15000 }
+                            ],
+                            totalDebe: 15000,
+                            totalHaber: 15000
+                        },
+                        {
+                            numero: 17,
+                            fecha: '2026-05-05',
+                            descripcion: 'Venta de computadoras y accesorios',
+                            detalles: [
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'DEBE', monto: 90000 },
+                                { codigo: '4010', nombre: ventas.nombre, tipo: 'HABER', monto: 90000 }
+                            ],
+                            totalDebe: 90000,
+                            totalHaber: 90000
+                        },
+                        {
+                            numero: 18,
+                            fecha: '2026-05-10',
+                            descripcion: 'Compra de inventario al crédito',
+                            detalles: [
+                                { codigo: '1040', nombre: inventario.nombre, tipo: 'DEBE', monto: 40000 },
+                                { codigo: '2010', nombre: proveedores.nombre, tipo: 'HABER', monto: 40000 }
+                            ],
+                            totalDebe: 40000,
+                            totalHaber: 40000
+                        },
+                        {
+                            numero: 19,
+                            fecha: '2026-05-15',
+                            descripcion: 'Pago de salarios',
+                            detalles: [
+                                { codigo: '5030', nombre: salarios.nombre, tipo: 'DEBE', monto: 8000 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 8000 }
+                            ],
+                            totalDebe: 8000,
+                            totalHaber: 8000
+                        },
+                        {
+                            numero: 20,
+                            fecha: '2026-05-20',
+                            descripcion: 'Pago de servicios básicos',
+                            detalles: [
+                                { codigo: '5050', nombre: servicios.nombre, tipo: 'DEBE', monto: 2500 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 2500 }
+                            ],
+                            totalDebe: 2500,
+                            totalHaber: 2500
+                        },
+                        {
+                            numero: 21,
+                            fecha: '2026-05-30',
+                            descripcion: 'Segundo pago a proveedores',
+                            detalles: [
+                                { codigo: '2010', nombre: proveedores.nombre, tipo: 'DEBE', monto: 20000 },
+                                { codigo: '1010', nombre: caja.nombre, tipo: 'HABER', monto: 20000 }
+                            ],
+                            totalDebe: 20000,
+                            totalHaber: 20000
+                        }
+                    ];
+
+                    asientos = asientosDefault;
+                    guardarDatos();
+                }
+            }
+        }
+
+        function abrirPestana(pestana) {
+            // Ocultar todas las pestañas
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Mostrar pestana seleccionada
+            document.getElementById(pestana).classList.add('active');
+            event.target.classList.add('active');
+
+            // Actualizar selects según la pestaña
+            if (pestana === 'libro-mayor') {
+                actualizarSelectMayor();
+            }
+        }
+
+        // GESTIÓN DE CUENTAS
+        function agregarCuenta() {
+            const codigo = document.getElementById('codigoCuenta').value.trim();
+            const nombre = document.getElementById('nombreCuenta').value.trim();
+            const tipo = document.getElementById('tipoCuenta').value;
+
+            if (!codigo || !nombre || !tipo) {
+                alert('Por favor complete todos los campos');
+                return;
+            }
+
+            if (cuentas.some(c => c.codigo === codigo)) {
+                alert('La cuenta con este código ya existe');
+                return;
+            }
+
+            cuentas.push({ codigo, nombre, tipo });
+            guardarDatos();
+            
+            document.getElementById('codigoCuenta').value = '';
+            document.getElementById('nombreCuenta').value = '';
+            document.getElementById('tipoCuenta').value = '';
+
+            actualizarTabla();
+            actualizarSelectCuentas();
+            alert('Cuenta agregada correctamente');
+        }
+
+        function eliminarCuenta(codigo) {
+            if (confirm('¿Está seguro que desea eliminar esta cuenta?')) {
+                cuentas = cuentas.filter(c => c.codigo !== codigo);
+                guardarDatos();
+                actualizarTabla();
+                actualizarSelectCuentas();
+            }
+        }
+
+        function actualizarTabla() {
+            const cuerpo = document.getElementById('cuerpoTabla');
+            cuerpo.innerHTML = '';
+
+            if (cuentas.length === 0) {
+                cuerpo.innerHTML = '<tr><td colspan="5" class="no-data">No hay cuentas registradas</td></tr>';
+                return;
+            }
+
+            cuentas.forEach(cuenta => {
+                const saldo = calcularSaldoCuenta(cuenta.codigo);
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td>${cuenta.codigo}</td>
+                    <td>${cuenta.nombre}</td>
+                    <td>${cuenta.tipo}</td>
+                    <td class="text-right">
+                        ${saldo.tipo === 'D' ? '<span class="debit">D. ' : '<span class="credit">H. '}${Math.abs(saldo.monto).toFixed(2)}</span>
+                    </td>
+                    <td>
+                        <button class="action-btn delete" onclick="eliminarCuenta('${cuenta.codigo}')">Eliminar</button>
+                    </td>
+                `;
+                cuerpo.appendChild(fila);
+            });
+        }
+
+        function actualizarSelectCuentas() {
+            const select = document.getElementById('cuentaAsiento');
+            const select2 = document.getElementById('cuentaMayor');
+            select.innerHTML = '<option value="">Seleccionar cuenta...</option>';
+            select2.innerHTML = '<option value="">Todas las cuentas</option>';
+
+            cuentas.forEach(cuenta => {
+                const option = document.createElement('option');
+                option.value = cuenta.codigo;
+                option.textContent = `${cuenta.codigo} - ${cuenta.nombre}`;
+                select.appendChild(option);
+
+                const option2 = document.createElement('option');
+                option2.value = cuenta.codigo;
+                option2.textContent = `${cuenta.codigo} - ${cuenta.nombre}`;
+                select2.appendChild(option2);
+            });
+        }
+
+        function actualizarSelectMayor() {
+            const select = document.getElementById('cuentaMayor');
+            select.innerHTML = '<option value="">Todas las cuentas</option>';
+
+            cuentas.forEach(cuenta => {
+                const option = document.createElement('option');
+                option.value = cuenta.codigo;
+                option.textContent = `${cuenta.codigo} - ${cuenta.nombre}`;
+                select.appendChild(option);
+            });
+        }
+
+        // GESTIÓN DE ASIENTOS
+        function actualizarNumAsiento() {
+            const num = asientos.length + 1;
+            document.getElementById('numAsiento').value = num.toString().padStart(4, '0');
+        }
+
+        function agregarDetalleAsiento() {
+            const cuenta = document.getElementById('cuentaAsiento').value;
+            const tipo = document.getElementById('tipoMovimiento').value;
+            const monto = parseFloat(document.getElementById('montoAsiento').value);
+
+            if (!cuenta || !monto || monto <= 0) {
+                alert('Por favor complete los campos requeridos');
+                return;
+            }
+
+            const cuentaObj = cuentas.find(c => c.codigo === cuenta);
+            detallesActuales.push({
+                codigo: cuenta,
+                nombre: cuentaObj.nombre,
+                tipo: tipo,
+                monto: monto
+            });
+
+            document.getElementById('montoAsiento').value = '';
+            document.getElementById('cuentaAsiento').value = '';
+
+            actualizarDetallesAsiento();
+        }
+
+        function actualizarDetallesAsiento() {
+            const container = document.getElementById('detallesAsiento');
+            container.innerHTML = '';
+
+            let totalDebe = 0, totalHaber = 0;
+
+            detallesActuales.forEach((detalle, index) => {
+                const div = document.createElement('div');
+                div.className = 'asiento-detalle';
+                div.innerHTML = `
+                    <div class="asiento-detalle-item">
+                        <span><strong>${detalle.codigo}</strong> - ${detalle.nombre}</span>
+                        <span>${detalle.tipo === 'DEBE' ? '<span class="debit">DEBE:</span>' : '<span class="credit">HABER:</span>'} ${detalle.monto.toFixed(2)}</span>
+                        <button class="action-btn delete" onclick="eliminarDetalle(${index})" style="padding: 2px 8px; font-size: 11px;">Eliminar</button>
+                    </div>
+                `;
+                container.appendChild(div);
+
+                if (detalle.tipo === 'DEBE') totalDebe += detalle.monto;
+                else totalHaber += detalle.monto;
+            });
+
+            document.getElementById('totalDebe').textContent = totalDebe.toFixed(2);
+            document.getElementById('totalHaber').textContent = totalHaber.toFixed(2);
+
+            const diferencia = Math.abs(totalDebe - totalHaber);
+            const msgEl = document.getElementById('balanceMsg');
+            
+            if (diferencia < 0.01) {
+                msgEl.innerHTML = '<span style="color: green;">✓ Asiento Balanceado</span>';
+            } else {
+                msgEl.innerHTML = `<span style="color: red;">✗ Diferencia: ${diferencia.toFixed(2)}</span>`;
+            }
+        }
+
+        function eliminarDetalle(index) {
+            detallesActuales.splice(index, 1);
+            actualizarDetallesAsiento();
+        }
+
+        function grabarAsiento() {
+            const fecha = document.getElementById('fechaAsiento').value;
+            const descripcion = document.getElementById('descAsiento').value.trim();
+
+            if (!fecha || !descripcion || detallesActuales.length === 0) {
+                alert('Por favor complete todos los campos del asiento');
+                return;
+            }
+
+            let totalDebe = 0, totalHaber = 0;
+            detallesActuales.forEach(d => {
+                if (d.tipo === 'DEBE') totalDebe += d.monto;
+                else totalHaber += d.monto;
+            });
+
+            if (Math.abs(totalDebe - totalHaber) > 0.01) {
+                alert('El asiento no está balanceado. Debe = Haber');
+                return;
+            }
+
+            const asiento = {
+                numero: asientos.length + 1,
+                fecha: fecha,
+                descripcion: descripcion,
+                detalles: JSON.parse(JSON.stringify(detallesActuales)),
+                totalDebe: totalDebe,
+                totalHaber: totalHaber
+            };
+
+            asientos.push(asiento);
+            guardarDatos();
+
+            // Limpiar formulario
+            document.getElementById('descAsiento').value = '';
+            document.getElementById('fechaAsiento').valueAsDate = new Date();
+            detallesActuales = [];
+            actualizarNumAsiento();
+            actualizarDetallesAsiento();
+            actualizarTablaAsientos();
+
+            alert('Asiento grabado correctamente');
+        }
+
+        function actualizarTablaAsientos() {
+            const cuerpo = document.getElementById('cuerpoAsientos');
+            cuerpo.innerHTML = '';
+
+            if (asientos.length === 0) {
+                cuerpo.innerHTML = '<tr><td colspan="6" class="no-data">No hay asientos registradas</td></tr>';
+                return;
+            }
+
+            asientos.forEach((asiento, idx) => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                    <td>${asiento.numero.toString().padStart(4, '0')}</td>
+                    <td>${asiento.fecha}</td>
+                    <td>${asiento.descripcion}</td>
+                    <td class="text-right debit">${asiento.totalDebe.toFixed(2)}</td>
+                    <td class="text-right credit">${asiento.totalHaber.toFixed(2)}</td>
+                    <td>
+                        <button class="action-btn" onclick="verDetalleAsiento(${idx})">Ver</button>
+                        <button class="action-btn delete" onclick="eliminarAsiento(${idx})">Eliminar</button>
+                    </td>
+                `;
+                cuerpo.appendChild(fila);
+            });
+        }
+
+        function verDetalleAsiento(idx) {
+            const asiento = asientos[idx];
+            const modal = document.getElementById('modalEditar');
+            const contenido = document.getElementById('contenidoModal');
+
+            let html = `
+                <p><strong>Número:</strong> ${asiento.numero.toString().padStart(4, '0')}</p>
+                <p><strong>Fecha:</strong> ${asiento.fecha}</p>
+                <p><strong>Descripción:</strong> ${asiento.descripcion}</p>
+                <table style="width: 100%; margin-top: 15px;">
+                    <thead>
+                        <tr>
+                            <th>Cuenta</th>
+                            <th>Debe</th>
+                            <th>Haber</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            asiento.detalles.forEach(detalle => {
+                const debe = detalle.tipo === 'DEBE' ? detalle.monto.toFixed(2) : '0.00';
+                const haber = detalle.tipo === 'HABER' ? detalle.monto.toFixed(2) : '0.00';
+                html += `
+                    <tr>
+                        <td>${detalle.codigo} - ${detalle.nombre}</td>
+                        <td class="text-right">${debe}</td>
+                        <td class="text-right">${haber}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div style="margin-top: 15px; text-align: right;">
+                    <strong>Total Debe:</strong> ${asiento.totalDebe.toFixed(2)}<br>
+                    <strong>Total Haber:</strong> ${asiento.totalHaber.toFixed(2)}
+                </div>
+            `;
+
+            contenido.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function eliminarAsiento(idx) {
+            if (confirm('¿Está seguro que desea eliminar este asiento?')) {
+                asientos.splice(idx, 1);
+                guardarDatos();
+                actualizarTablaAsientos();
+            }
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalEditar').classList.remove('active');
+        }
+
+        // CÁLCULOS
+        function calcularSaldoCuenta(codigo) {
+            let debe = 0, haber = 0;
+
+            asientos.forEach(asiento => {
+                asiento.detalles.forEach(detalle => {
+                    if (detalle.codigo === codigo) {
+                        if (detalle.tipo === 'DEBE') debe += detalle.monto;
+                        else haber += detalle.monto;
+                    }
+                });
+            });
+
+            const saldo = debe - haber;
+            return {
+                debe: debe,
+                haber: haber,
+                monto: Math.abs(saldo),
+                tipo: saldo >= 0 ? 'D' : 'H'
+            };
+        }
+
+        // REPORTES
+        function generarLibroDiario() {
+            const container = document.getElementById('reportLibroDiario');
+            
+            if (asientos.length === 0) {
+                container.innerHTML = '<div class="no-data">No hay partidas para mostrar</div>';
+                return;
+            }
+
+            let html = `
+                <div class="company-info">
+                    <h2>LIBRO DIARIO</h2>
+                    <p>Período: ${new Date().toLocaleDateString('es-ES')}</p>
+                </div>
+            `;
+
+            asientos.forEach(asiento => {
+                html += `
+                    <div class="report-section">
+                        <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px;">
+                            <strong>Asiento Nº ${asiento.numero.toString().padStart(4, '0')} | Fecha: ${asiento.fecha}</strong><br>
+                            ${asiento.descripcion}
+                        </div>
+                        <table style="width: 100%; font-size: 0.9em;">
+                            <thead>
+                                <tr>
+                                    <th>Cuenta</th>
+                                    <th class="text-right">Debe</th>
+                                    <th class="text-right">Haber</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                asiento.detalles.forEach(detalle => {
+                    const debe = detalle.tipo === 'DEBE' ? detalle.monto.toFixed(2) : '';
+                    const haber = detalle.tipo === 'HABER' ? detalle.monto.toFixed(2) : '';
+                    html += `
+                        <tr>
+                            <td>${detalle.codigo} ${detalle.nombre}</td>
+                            <td class="text-right">${debe}</td>
+                            <td class="text-right">${haber}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                        <div style="text-align: right; margin-top: 5px; padding-top: 5px; border-top: 1px solid #ddd; font-size: 0.9em;">
+                            <strong>Total: ${asiento.totalDebe.toFixed(2)}</strong>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function generarLibroMayor() {
+            const cuentaFiltro = document.getElementById('cuentaMayor').value;
+            const container = document.getElementById('reportLibroMayor');
+
+            let cuentasAMostrar = cuentaFiltro ? cuentas.filter(c => c.codigo === cuentaFiltro) : cuentas;
+
+            if (cuentasAMostrar.length === 0) {
+                container.innerHTML = '<div class="no-data">No hay cuentas para mostrar</div>';
+                return;
+            }
+
+            let html = `
+                <div class="company-info">
+                    <h2>LIBRO MAYOR</h2>
+                    <p>Período: ${new Date().toLocaleDateString('es-ES')}</p>
+                </div>
+            `;
+
+            cuentasAMostrar.forEach(cuenta => {
+                const movimientos = [];
+                let saldoDeudor = 0;
+
+                asientos.forEach(asiento => {
+                    asiento.detalles.forEach(detalle => {
+                        if (detalle.codigo === cuenta.codigo) {
+                            movimientos.push({
+                                fecha: asiento.fecha,
+                                descripcion: asiento.descripcion,
+                                asiento: asiento.numero,
+                                debe: detalle.tipo === 'DEBE' ? detalle.monto : 0,
+                                haber: detalle.tipo === 'HABER' ? detalle.monto : 0
+                            });
+                        }
+                    });
+                });
+
+                if (movimientos.length === 0) return;
+
+                html += `
+                    <div class="report-section">
+                        <div style="background: #667eea; color: white; padding: 10px; margin: 10px 0; border-radius: 5px;">
+                            <strong>${cuenta.codigo} - ${cuenta.nombre}</strong><br>
+                            <small>Tipo: ${cuenta.tipo}</small>
+                        </div>
+                        <table style="width: 100%; font-size: 0.9em;">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Descripción</th>
+                                    <th class="text-right">Debe</th>
+                                    <th class="text-right">Haber</th>
+                                    <th class="text-right">Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                movimientos.forEach(mov => {
+                    saldoDeudor += mov.debe - mov.haber;
+                    html += `
+                        <tr>
+                            <td>${mov.fecha}</td>
+                            <td>${mov.descripcion}</td>
+                            <td class="text-right">${mov.debe > 0 ? mov.debe.toFixed(2) : ''}</td>
+                            <td class="text-right">${mov.haber > 0 ? mov.haber.toFixed(2) : ''}</td>
+                            <td class="text-right ${saldoDeudor >= 0 ? 'balance-positive' : 'balance-negative'}">${Math.abs(saldoDeudor).toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                        <div style="text-align: right; margin-top: 5px; padding-top: 5px; border-top: 1px solid #ddd; font-size: 0.9em;">
+                            <strong>Saldo Final: <span class="${saldoDeudor >= 0 ? 'balance-positive' : 'balance-negative'}">${saldoDeudor >= 0 ? 'D. ' : 'H. '}${Math.abs(saldoDeudor).toFixed(2)}</span></strong>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function generarBalance() {
+            const container = document.getElementById('reportBalance');
+
+            let activos = 0, pasivos = 0, capital = 0;
+            const detalles = { activos: [], pasivos: [], capital: [] };
+
+            cuentas.forEach(cuenta => {
+                if (cuenta.tipo === 'INGRESO' || cuenta.tipo === 'GASTO') return;
+
+                const saldo = calcularSaldoCuenta(cuenta.codigo);
+                const saldoFinal = saldo.tipo === 'D' ? saldo.monto : -saldo.monto;
+
+                if (cuenta.tipo === 'ACTIVO') {
+                    activos += saldoFinal;
+                    detalles.activos.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, monto: saldoFinal });
+                } else if (cuenta.tipo === 'PASIVO') {
+                    pasivos += saldoFinal;
+                    detalles.pasivos.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, monto: saldoFinal });
+                } else if (cuenta.tipo === 'CAPITAL') {
+                    capital += saldoFinal;
+                    detalles.capital.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, monto: saldoFinal });
+                }
+            });
+
+            // Agregar utilidades del ejercicio
+            let ingresos = 0, gastos = 0;
+            cuentas.forEach(cuenta => {
+                if (cuenta.tipo === 'INGRESO') {
+                    const saldo = calcularSaldoCuenta(cuenta.codigo);
+                    ingresos += saldo.haber; // Los ingresos están en el haber
+                } else if (cuenta.tipo === 'GASTO') {
+                    const saldo = calcularSaldoCuenta(cuenta.codigo);
+                    gastos += saldo.debe; // Los gastos están en el debe
+                }
+            });
+
+            const utilidades = ingresos - gastos;
+            capital += utilidades;
+
+            let html = `
+                <div class="company-info">
+                    <h2>BALANCE GENERAL</h2>
+                    <p>Al ${new Date().toLocaleDateString('es-ES')}</p>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; margin-bottom: 15px;">ACTIVO</h3>
+                        <table style="width: 100%;">
+                            <tbody>
+            `;
+
+            detalles.activos.forEach(item => {
+                html += `
+                    <tr>
+                        <td>${item.codigo} - ${item.nombre}</td>
+                        <td class="text-right" style="padding-right: 20px;">${Math.abs(item.monto).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                            </tbody>
+                        </table>
+                        <div style="text-align: right; margin-top: 10px; padding-top: 10px; border-top: 2px solid #ddd; font-weight: bold;">
+                            TOTAL ACTIVO: ${Math.abs(activos).toFixed(2)}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 style="color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; margin-bottom: 15px;">PASIVO Y CAPITAL</h3>
+                        <table style="width: 100%;">
+                            <tbody>
+                                <tr style="font-weight: bold; background: #f0f0f0;">
+                                    <td colspan="2">PASIVO</td>
+                                </tr>
+            `;
+
+            detalles.pasivos.forEach(item => {
+                html += `
+                    <tr>
+                        <td style="padding-left: 20px;">${item.codigo} - ${item.nombre}</td>
+                        <td class="text-right" style="padding-right: 20px;">${Math.abs(item.monto).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                                <tr style="font-weight: bold; background: #f0f0f0;">
+                                    <td colspan="2">CAPITAL</td>
+                                </tr>
+            `;
+
+            detalles.capital.forEach(item => {
+                html += `
+                    <tr>
+                        <td style="padding-left: 20px;">${item.codigo} - ${item.nombre}</td>
+                        <td class="text-right" style="padding-right: 20px;">${Math.abs(item.monto).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            if (Math.abs(utilidades) > 0.01) {
+                html += `
+                    <tr>
+                        <td style="padding-left: 20px;">Utilidades del Ejercicio</td>
+                        <td class="text-right" style="padding-right: 20px;">${utilidades.toFixed(2)}</td>
+                    </tr>
+                `;
+            }
+
+            html += `
+                            </tbody>
+                        </table>
+                        <div style="text-align: right; margin-top: 10px; padding-top: 10px; border-top: 2px solid #ddd; font-weight: bold;">
+                            TOTAL PASIVO Y CAPITAL: ${Math.abs(pasivos + capital).toFixed(2)}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function generarResultados() {
+            const container = document.getElementById('reportResultados');
+
+            let ingresos = 0, gastosOp = 0;
+            const detalles = { ingresos: [], gastos: [] };
+
+            cuentas.forEach(cuenta => {
+                    const saldo = calcularSaldoCuenta(cuenta.codigo);
+                if (cuenta.tipo === 'INGRESO') {
+                    ingresos += saldo.haber; // Los ingresos están en el haber
+                    detalles.ingresos.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, monto: saldo.haber });
+                } else if (cuenta.tipo === 'GASTO') {
+                    gastosOp += saldo.debe; // Los gastos se registran en el debe
+                     detalles.gastos.push({ codigo: cuenta.codigo, nombre: cuenta.nombre, monto: saldo.debe });
+                }
+            });
+
+            const utilidad = ingresos - gastosOp;
+
+            let html = `
+                <div class="company-info">
+                    <h2>ESTADO DE RESULTADOS</h2>
+                    <p>Período: ${new Date().toLocaleDateString('es-ES')}</p>
+                </div>
+
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <table style="width: 100%;">
+                        <tbody>
+                            <tr style="font-weight: bold; background: #667eea; color: white;">
+                                <td>INGRESOS</td>
+                                <td class="text-right"></td>
+                            </tr>
+            `;
+
+            detalles.ingresos.forEach(item => {
+                html += `
+                    <tr>
+                        <td style="padding-left: 20px;">${item.codigo} - ${item.nombre}</td>
+                        <td class="text-right">${item.monto.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                            <tr style="border-top: 1px solid #ddd; font-weight: bold;">
+                                <td style="text-align: right; padding-right: 20px;">Total Ingresos</td>
+                                <td class="text-right">${ingresos.toFixed(2)}</td>
+                            </tr>
+
+                            <tr style="font-weight: bold; background: #f0f0f0;">
+                                <td>GASTOS OPERACIONALES</td>
+                                <td class="text-right"></td>
+                            </tr>
+            `;
+
+            detalles.gastos.forEach(item => {
+                html += `
+                    <tr>
+                        <td style="padding-left: 20px;">${item.codigo} - ${item.nombre}</td>
+                        <td class="text-right">${item.monto.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                            <tr style="border-top: 1px solid #ddd; font-weight: bold; background: #f0f0f0;">
+                                <td style="text-align: right; padding-right: 20px;">Total Gastos</td>
+                                <td class="text-right">${gastosOp.toFixed(2)}</td>
+                            </tr>
+
+                            <tr style="border-top: 2px solid #333; border-bottom: 2px solid #333; font-weight: bold; font-size: 1.1em; background: #e8e8e8;">
+                                <td style="text-align: right; padding-right: 20px;">UTILIDAD NETA</td>
+                                <td class="text-right" style="${utilidad >= 0 ? 'color: green;' : 'color: red;'}">${utilidad.toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // EXPORTAR PDF
+         function exportarPDF(tipo) {
+            let reporteId = '';
+             let titulo = '';
+ 
+             if (tipo === 'libroDiario') {
+                 generarLibroDiario();
+                reporteId = 'reportLibroDiario';
+                 titulo = 'Libro_Diario';
+             } else if (tipo === 'libroMayor') {
+                 generarLibroMayor();
+                reporteId = 'reportLibroMayor';
+                 titulo = 'Libro_Mayor';
+             } else if (tipo === 'balance') {
+                 generarBalance();
+                reporteId = 'reportBalance';
+                 titulo = 'Balance_General';
+             } else if (tipo === 'resultados') {
+                 generarResultados();
+                reporteId = 'reportResultados';
+                 titulo = 'Estado_de_Resultados';
+             }
+ 
+            const sourceElement = document.getElementById(reporteId);
+            if (!sourceElement || !sourceElement.innerHTML.trim()) {
+                alert('No hay contenido disponible para exportar. Genere el informe primero.');
+                return;
+            }
+
+            const clone = sourceElement.cloneNode(true);
+            clone.style.position = 'fixed';
+            clone.style.left = '-9999px';
+            clone.style.top = '0';
+            clone.style.width = `${sourceElement.offsetWidth}px`;
+            clone.style.padding = '20px';
+            clone.style.background = '#ffffff';
+            document.body.appendChild(clone);
+ 
+            html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+                .then(canvas => {
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    const imgWidth = pageWidth;
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    let heightLeft = imgHeight;
+                    let position = 0;
+ 
+                    const imgData = canvas.toDataURL('image/png');
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+ 
+                    while (heightLeft > 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+ 
+                    pdf.save(`${titulo}_${new Date().toISOString().split('T')[0]}.pdf`);
+                })
+                .catch(error => {
+                    console.error('Error al generar el PDF:', error);
+                    alert('Ocurrió un error al generar el PDF. Revisa la consola para más detalles.');
+                })
+                .finally(() => {
+                    clone.remove();
+                });
+        }
+
+        // ALMACENAMIENTO
+        function guardarDatos() {
+            localStorage.setItem('cuentas', JSON.stringify(cuentas));
+            localStorage.setItem('asientos', JSON.stringify(asientos));
+        }
+
+        // INICIAR
+        window.addEventListener('load', () => {
+            inicializar();
+            actualizarTablaAsientos();
+        });
+    </script>
+</body>
+</html>
